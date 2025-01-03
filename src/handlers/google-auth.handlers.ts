@@ -32,7 +32,14 @@ export class GoogleAuthHandler extends Handler {
 				"google",
 				payload.sub,
 			);
-			user = { id: userId, email: payload.email };
+			user = { 
+                id: userId,
+                email: payload.email,
+                provider: "google",
+                passwordHash: null,         // добавлено
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
 		}
 
 		const token = await this.jwt.sign({

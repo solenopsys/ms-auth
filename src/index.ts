@@ -13,7 +13,7 @@ import { DB } from './db';
 dotenv.config();
 
 const port = Number(process.env.PORT) || 3000;
-const db = new DB();
+const db = new DB("/db/auth.db");
 
 const googleHandler = () => {
   const googleAuth = new GoogleAuthService(

@@ -1,80 +1,104 @@
-import { Database } from "sqlite3";
-import { schema } from "./schema";
+ 
+import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/bun-sqlite';
+import { Database } from 'bun:sqlite';
+import { type User, type AccessToken, type Permission } from './schema';
+import { users,accessTokens, permissions } from './schema';
 
+
+// Database class
 export class DB {
-	private db: Database;
-
-	constructor() {
-		this.db = new Database("auth.db");
-		this.init();
+	private db: ReturnType<typeof drizzle>;
+  
+	constructor(dbPath: string) {
+	  const sqlite = Database.open(dbPath);
+	  this.db = drizzle(sqlite);
 	}
-
-	private init() {
-		this.db.exec(schema);
-	}
-
+  
 	async createUser(
-		email: string,
-		passwordHash?: string | null,
-		provider?: string | null,
-		providerId?: string | null,
-	): Promise<any> {
-		return new Promise((resolve, reject) => {
-			this.db.run(
-				`INSERT INTO users (email, password_hash, provider, provider_id) 
-         VALUES (?, ?, ?, ?)`,
-				[email, passwordHash, provider, providerId],
-				function (err) {
-					if (err) reject(err);
-					resolve(this.lastID);
-				},
-			);
-		});
+	  email: string,
+	  passwordHash?: string | null,
+	  provider?: string | null,
+	  providerId?: string | null
+	): Promise<number> {
+	  const result = await this.db.insert(users).values({
+		email,
+		passwordHash,
+		provider,
+		providerId
+	  }).returning({ id: users.id });
+  
+	  return result[0].id;
 	}
-
-	async findUserByEmail(email: string): Promise<any> {
-		return new Promise((resolve, reject) => {
-			this.db.get(
-				"SELECT * FROM users WHERE email = ?",
-				[email],
-				(err, row) => {
-					if (err) reject(err);
-					resolve(row);
-				},
-			);
-		});
+  
+	async findUserByEmail(email: string): Promise<User | undefined> {
+	  const result = await this.db.select()
+		.from(users)
+		.where(sql`${users.email} = ${email}`)
+		.limit(1);
+	  
+	  return result[0];
 	}
-
+  
 	async createAccessToken(
-		userId: number,
-		token: string,
-		scope: string,
-		expiresAt: Date,
-	) {
-		return new Promise((resolve, reject) => {
-			this.db.run(
-				`INSERT INTO access_tokens (user_id, token, scope, expires_at)
-         VALUES (?, ?, ?, ?)`,
-				[userId, token, scope, expiresAt.toISOString()],
-				function (err) {
-					if (err) reject(err);
-					resolve(this.lastID);
-				},
-			);
-		});
+	  userId: number,
+	  token: string,
+	  scope: string,
+	  expiresAt: Date
+	): Promise<number> {
+	  const result = await this.db.insert(accessTokens).values({
+		userId,
+		token,
+		scope,
+		expiresAt: expiresAt.toISOString()
+	  }).returning({ id: accessTokens.id });
+  
+	  return result[0].id;
 	}
-
-	async validateAccessToken(token: string): Promise<any> {
-		return new Promise((resolve, reject) => {
-			this.db.get(
-				`SELECT * FROM access_tokens 
-         WHERE token = ? AND expires_at > datetime('now')`,
-				[token],
-				(err, row) => {
-					if (err) reject(err);
-					resolve(row);
-				},
-			);
-		});
+  
+	async validateAccessToken(token: string): Promise<AccessToken | undefined> {
+	  const result = await this.db.select()
+		.from(accessTokens)
+		.where(sql`${accessTokens.token} = ${token} AND datetime(${accessTokens.expiresAt}) > datetime('now')`)
+		.limit(1);
+	  
+	  return result[0];
 	}
-}
+  
+	async addPermission(
+	  userId: number,
+	  resource: string,
+	  action: string
+	): Promise<number> {
+	  const result = await this.db.insert(permissions).values({
+		userId,
+		resource,
+		action
+	  }).returning({ id: permissions.id });
+  
+	  return result[0].id;
+	}
+  
+	async getUserPermissions(userId: number): Promise<Permission[]> {
+	  return await this.db.select()
+		.from(permissions)
+		.where(sql`${permissions.userId} = ${userId}`);
+	}
+  
+	async checkPermission(
+	  userId: number,
+	  resource: string,
+	  action: string
+	): Promise<boolean> {
+	  const result = await this.db.select()
+		.from(permissions)
+		.where(sql`
+		  ${permissions.userId} = ${userId} AND 
+		  ${permissions.resource} = ${resource} AND 
+		  ${permissions.action} = ${action}
+		`)
+		.limit(1);
+	  
+	  return result.length > 0;
+	}
+  }

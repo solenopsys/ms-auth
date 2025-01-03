@@ -8,6 +8,7 @@
     "@elysiajs/jwt": "0.7.0",
     "@elysiajs/swagger": "0.7.3",
     "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.38.3",
     "elysia": "0.7.30",
     "jwks-rsa": "3.1.0"
   },

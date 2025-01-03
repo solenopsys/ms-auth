@@ -1,5 +1,4 @@
 import { describe, expect, it, beforeAll, afterAll } from "bun:test";
-import { Elysia } from 'elysia';
 import { jwt } from '@elysiajs/jwt';
 import { DB } from '../src/db';
 import { GoogleAuthHandler } from '../src/handlers/google-auth.handlers';
@@ -23,7 +22,7 @@ describe('Google Auth Integration', () => {
   let app: RestApp;
 
   beforeAll(() => {
-    const db = new DB();
+    const db = new DB("auth.db");
     const googleAuth = new MockGoogleAuthService();
 
     const gh= new GoogleAuthHandler(googleAuth, db, jwt);

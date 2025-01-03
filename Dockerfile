@@ -9,7 +9,7 @@ COPY package.json .
 COPY tsconfig.json .
 COPY bun.lockb .
 COPY src/ ./src/
-COPY index.ts .
+
 
 #RUN ls
 
@@ -28,4 +28,4 @@ EXPOSE 3000
 
 # env переменные окружения для конфигурации базы данных
 ENV DBPATH=/db
-CMD ["bun", "run", "index.ts"]
+CMD ["bun", "run", "src/index.ts"]
