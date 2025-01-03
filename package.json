@@ -1,0 +1,24 @@
+{
+  "name": "auth-service",
+  "module": "src/index.ts",
+  "type": "module",
+  "dependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@elysiajs/cors": "0.7.2",
+    "@elysiajs/jwt": "0.7.0",
+    "@elysiajs/swagger": "0.7.3",
+    "dotenv": "^16.4.7",
+    "elysia": "0.7.30",
+    "jwks-rsa": "3.1.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "@types/node": "20.10.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "format": "bunx @biomejs/biome format src/**/*.ts --write"
+  }
+}
