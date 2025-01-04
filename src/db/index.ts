@@ -1,6 +1,7 @@
 import { sql, eq, and } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { Database } from 'bun:sqlite';
+import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import {
 	type User,
 	type AccessToken,
@@ -17,12 +18,20 @@ import {
 // Database class
 export class DB {
 	public readonly db!: ReturnType<typeof drizzle>;
+	sqlite!: Database;
 
 
 
 	constructor(dbPath: string) {
-		const sqlite = Database.open(dbPath);
-		this.db = drizzle(sqlite);
+		this.sqlite = Database.open(dbPath);
+		this.db = drizzle(this.sqlite);
+
+      // Это применит все миграции
+      
+	}
+
+	async init(){
+		await migrate(this.db, { migrationsFolder: "./drizzle" });
 	}
 
 	async createUser(
@@ -113,7 +122,6 @@ export class DB {
 			permission = { id, resource, action } as Permission;
 		}
 
-		// Добавим связь пользователя с permission
 		await this.addPermissionToUser(userId, permission.id);
 	}
 
@@ -158,5 +166,9 @@ export class DB {
 				eq(userPermissions.userId, userId),
 				eq(userPermissions.permissionId, permissionId)
 			));
+	}
+
+	close(){
+		this.sqlite.close();
 	}
 }

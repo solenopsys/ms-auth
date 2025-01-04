@@ -9,7 +9,8 @@ export class VerifyTokenHandler extends Handler {
 	}
 
 	async handle({ headers }: any) {
-		const authHeader = headers.get("Authorization");
+
+		const authHeader = headers["authorization"];
 		if (!authHeader?.startsWith("Bearer ")) {
 			throw new Error("Invalid token");
 		}

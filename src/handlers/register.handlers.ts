@@ -1,6 +1,5 @@
 import { Handler, HttpMethod } from "../types/handler";
-import { DB } from "../db";
-import { ClientService } from "../services/client.service";
+import { DB } from "../db"; 
 
 const ROOT_SECRET=process.env.ROOT_SECRET!
 
@@ -20,24 +19,22 @@ export class RegisterHandler extends Handler {
 
 		// permissions [npm:add, npm:remove, npm:publish]
 
-      console.log("RS",root_secret,ROOT_SECRET);
 
 		if (root_secret !== ROOT_SECRET) {
 			throw new Error("Invalid root secret");
 		}
 
       const id= await this.db.createUser(client_id, client_secret);
-
+   
       for (const permission of permissions) {
         const parsed = permission.split(':');
         if (parsed.length !== 2) {
           throw new Error('Invalid permission');
         }
-       // await this.db.addPermissionToUserByAction(id, parsed.resource, parsed.action);
+        await this.db.addPermissionToUserByAction(id, parsed[0], parsed[1]);
       } 
-
       return {
-        id
+        id:id
       };
 	}
 }

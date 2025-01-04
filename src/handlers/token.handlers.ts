@@ -1,40 +1,60 @@
 import { Handler, HttpMethod } from "../types/handler";
-import { DB } from "../db";
-import { ClientService } from "../services/client.service";
+import { DB } from "../db"; 
+import { timingSafeEqual } from "crypto";
 
 export class CreateTokenHandler extends Handler {
-	path = "/auth/token";
-	method = HttpMethod.POST;
+    path = "/auth/token";
+    method = HttpMethod.POST;
 
-	constructor(
-		private db: DB,
-		private clientService: ClientService,
-	) {
-		super();
-	}
+    constructor(
+        private db: DB
+    ) {
+        super();
+    }
 
-	async handle({ body }: any) {
-		const { client_id, client_secret, scope } = body;
+    async handle({ body }: any) {
+        try {
+            const { client_id, client_secret } = body;
 
-		// Проверяем client_id и client_secret
-		const client = this.clientService.validateClient(client_id, client_secret);
-		if (!client) {
-			throw new Error("Invalid client credentials");
-		}
+            if (!client_id || !client_secret) {
+                throw new Error("Missing client credentials");
+            }
 
-		const token = crypto.randomUUID();
-		const expiresAt = new Date();
-		expiresAt.setDate(expiresAt.getDate() + 30);
+            // Проверяем client_id и client_secret в DB
+            const user = await this.db.findUserByEmail(client_id);
+   
 
-		await this.db.createAccessToken(client_id, token,  expiresAt);
+            if (!user) {
+                throw new Error("Invalid client credentials");
+            }
 
-		return {
-			access_token: token,
-			token_type: "Bearer",
-			expires_in: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
-			scope,
-		};
-	}
+            // @ts-ignore
+            const secretBuffer = Buffer.from(user.passwordHash);
+            const validSecretBuffer = Buffer.from(client_secret);
+
+            if (
+                secretBuffer.length !== validSecretBuffer.length ||
+                !timingSafeEqual(secretBuffer, validSecretBuffer)
+            ) {
+                throw new Error("Invalid client credentials");
+            }
+
+            // Если аутентификация прошла успешно, создаем токен
+            const token = crypto.randomUUID();
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+
+            await this.db.createAccessToken(user.id, token, expiresAt);
+
+            return {
+                access_token: token,
+                token_type: "Bearer",
+                expires_in: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
+            };
+        } catch (error) {
+            // Добавляем обработку ошибок
+            console.error('Token creation error:', error);
+            throw error;
+        }
+    }
 }
-
-

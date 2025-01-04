@@ -15,7 +15,10 @@ export abstract class Handler {
 	abstract handle(ctx: any): Promise<any>;
 
 	register(app: Elysia): void {
-		console.log(this.method, this.path);
-		app[this.method](this.path, (ctx) => this.handle(ctx));
+		
+		app[this.method](this.path, (ctx) =>{ 
+		//	console.log("context",ctx);
+			return this.handle(ctx);
+		});
 	}
 }

@@ -3,8 +3,9 @@ import { GoogleAuthService } from './services/google-auth.service';
 import { GoogleAuthHandler } from './handlers/google-auth.handlers';
 import { AppleAuthService } from './services/apple-auth.service';
 import { AppleAuthHandler } from './handlers/apple-auth.handlers';
-import { CreateTokenHandler, VerifyTokenHandler } from './handlers/token.handlers';
-import { ClientService } from './services/client.service';
+import { CreateTokenHandler } from './handlers/token.handlers';
+import {  VerifyTokenHandler } from './handlers/verify.handlers';
+
 import { RestApp} from './app';
 import * as dotenv from 'dotenv';
 import { jwt } from '@elysiajs/jwt';
@@ -37,10 +38,9 @@ const appleHandler = () => {
 
 const app = new RestApp(port);
 
-const clientService = new ClientService();
 app.addHandler( googleHandler());
 app.addHandler( appleHandler());
-app.addHandler( new CreateTokenHandler(db, clientService));
+app.addHandler( new CreateTokenHandler(db));
 app.addHandler(  new VerifyTokenHandler(db));
 
 
