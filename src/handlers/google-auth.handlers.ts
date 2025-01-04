@@ -29,8 +29,7 @@ export class GoogleAuthHandler extends Handler {
 			const userId = await this.db.createUser(
 				payload.email,
 				null,
-				"google",
-				payload.sub,
+				"google"
 			);
 			user = { 
                 id: userId,

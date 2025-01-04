@@ -22,16 +22,11 @@ export class CreateTokenHandler extends Handler {
 			throw new Error("Invalid client credentials");
 		}
 
-		// Проверяем запрошенные scopes
-		if (!this.clientService.validateScope(client, scope)) {
-			throw new Error("Invalid scope requested");
-		}
-
 		const token = crypto.randomUUID();
 		const expiresAt = new Date();
 		expiresAt.setDate(expiresAt.getDate() + 30);
 
-		await this.db.createAccessToken(client_id, token, scope, expiresAt);
+		await this.db.createAccessToken(client_id, token,  expiresAt);
 
 		return {
 			access_token: token,
@@ -42,27 +37,4 @@ export class CreateTokenHandler extends Handler {
 	}
 }
 
-export class VerifyTokenHandler extends Handler {
-	path = "/auth/verify";
-	method = HttpMethod.GET;
 
-	constructor(private db: DB) {
-		super();
-	}
-
-	async handle({ headers }: any) {
-		const authHeader = headers.get("Authorization");
-		if (!authHeader?.startsWith("Bearer ")) {
-			throw new Error("Invalid token");
-		}
-
-		const token = authHeader.slice(7);
-		const tokenData = await this.db.validateAccessToken(token);
-
-		if (!tokenData) {
-			throw new Error("Invalid or expired token");
-		}
-
-		return { valid: true, scope: tokenData.scope };
-	}
-}

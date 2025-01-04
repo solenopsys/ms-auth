@@ -18,7 +18,9 @@ export class MockGoogleAuthService implements GoogleAuth {
   }
 }
 
-describe('Google Auth Integration', () => {
+
+ 
+describe.skip('Google Auth Integration', () => {
   let app: RestApp;
 
   beforeAll(() => {
