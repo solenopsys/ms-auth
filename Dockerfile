@@ -9,6 +9,8 @@ COPY package.json .
 COPY tsconfig.json .
 COPY bun.lockb .
 COPY src/ ./src/
+COPY drizzle/ ./drizzle/
+
 
 
 #RUN ls
