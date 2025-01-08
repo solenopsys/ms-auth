@@ -1,33 +1,28 @@
-# Используем образ Bun
-FROM oven/bun:latest
+# Build stage
+FROM oven/bun:latest as builder
 
-# Устанавливаем рабочую директорию
-WORKDIR /app
+WORKDIR /build
 
-# Устанавливаем зависимости 
-COPY package.json .
-COPY tsconfig.json .
-COPY bun.lockb .
+# Copy only files needed for installation
+COPY package.json tsconfig.json bun.lockb ./
 COPY src/ ./src/
 COPY drizzle/ ./drizzle/
 
+# Install dependencies and build
+RUN bun install
+RUN bun build src/index.ts --outfile server.js --target bun
 
+# Production stage
+FROM oven/bun:latest
 
-#RUN ls
+WORKDIR /app
 
+# Copy only the built artifact
+COPY --from=builder /build/server.js ./
+COPY --from=builder /build/drizzle/ ./drizzle/
 
-
-RUN bun install 
-# Копируем файлы проекта
-#RUN  bun build index.ts --outfile server.js
-
-
-# Открываем порт 3000 для доступа
+# Configure environment
+ENV DBPATH=/db
 EXPOSE 3000
 
-# Запускаем сервер
-# todo убрать исходники
-
-# env переменные окружения для конфигурации базы данных
-ENV DBPATH=/db
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "server.js"]
