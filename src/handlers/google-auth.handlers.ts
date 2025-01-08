@@ -1,5 +1,5 @@
 import { Handler, HttpMethod } from "../types/handler";
-import { type GoogleAuth } from "../services/google-auth.service";
+import { type GoogleAuthService } from "../services/google-auth.service";
 import { DB } from "../db";
 
 export class GoogleAuthHandler extends Handler {
@@ -7,9 +7,8 @@ export class GoogleAuthHandler extends Handler {
 	method = HttpMethod.POST;
 
 	constructor(
-		private googleAuth: GoogleAuth,
-		private db: DB,
-		private jwt: any,
+		private googleAuth: GoogleAuthService,
+		private db: DB
 	) {
 		super();
 	}
@@ -41,7 +40,7 @@ export class GoogleAuthHandler extends Handler {
             };
 		}
 
-		const token = await this.jwt.sign({
+		const token = await this.googleAuth.signToken({
 			userId: user.id,
 			email: user.email,
 		});

@@ -1,24 +1,20 @@
-import { describe, expect, it, beforeAll, afterAll, beforeEach, afterEach } from "bun:test";
-import { jwt } from '@elysiajs/jwt';
+import { describe, expect, it } from "bun:test";
+ 
 import { DB } from '../src/db';
 import { RestApp } from '../src/app';
 import { RegisterHandler } from '../src/handlers/register.handlers';
-import { CreateTokenHandler } from '../src/handlers/token.handlers';
+import { CreateRefreshTokenHandler,CreateBearerTokenHandler } from '../src/handlers/token.handlers';
 import { VerifyTokenHandler } from '../src/handlers/verify.handlers';
+import { JwtService } from '../src/services/jwt.service';
+
+const jwtService = new JwtService();
 
 
 import * as dotenv from 'dotenv';
 dotenv.config({ path: ".env.test" });
 
 
-import { drizzle } from "drizzle-orm/bun-sqlite";
-
-import { Database } from "bun:sqlite";
-
-
-
-
-import { unlinkSync } from "node:fs";
+ 
 import { PermissionHandler } from "../src/handlers/permission.handlers";
 
 
@@ -28,8 +24,11 @@ const init = async (port: number): Promise<{ app: RestApp, db: DB }> => {
 
    await db.init();
 
+  
+
    app.addHandler(new RegisterHandler(db));
-   app.addHandler(new CreateTokenHandler(db));
+   app.addHandler( new CreateRefreshTokenHandler(db));
+   app.addHandler( new CreateBearerTokenHandler(db,jwtService));
    app.addHandler(new VerifyTokenHandler(db));
    app.addHandler(new PermissionHandler(db));
 
@@ -47,12 +46,6 @@ const destroy = async (app: RestApp, db: DB) => {
 
 
 describe('Register by Root', () => {
-
-
-
-
-
-
 
    it('root secret valid', async () => {
       const ROOT_SECRET = process.env.ROOT_SECRET!
@@ -75,8 +68,6 @@ describe('Register by Root', () => {
                'npm:remove',
                'npm:publish'
             ]
-
-
          })
       });
 
@@ -96,7 +87,7 @@ describe('Register by Root', () => {
 
 
    const genToken = async (port: number) => {
-      const response = await fetch(`http://localhost:${port}/auth/token`, {
+      const response = await fetch(`http://localhost:${port}/auth/token/refresh`, {
          method: 'POST',
          headers: {
             'Content-Type': 'application/json'
@@ -113,6 +104,25 @@ describe('Register by Root', () => {
       return data;
    };
 
+
+   const getBearerToken = async (port: number, refreshToken: string) => {
+      const response = await fetch(`http://localhost:${port}/auth/token/bearer`, {
+         method: 'POST',
+         headers: {
+            'Content-Type': 'application/json'
+         },
+         body: JSON.stringify({ 
+            refresh_token: refreshToken
+         })
+      });
+
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      return data;
+   };
+
+
    it('should token valid', async () => {
 
       const port = 7002;
@@ -123,7 +133,7 @@ describe('Register by Root', () => {
       const tockenData = await genToken(port);
 
       expect(tockenData).toHaveProperty('access_token');
-      expect(tockenData).toHaveProperty('token_type', 'Bearer');
+      expect(tockenData).toHaveProperty('token_type', 'Refresh');
       expect(tockenData).toHaveProperty('expires_in');
 
       const token = tockenData.access_token;
@@ -132,7 +142,7 @@ describe('Register by Root', () => {
          method: 'GET',
          headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
+            Authorization: `${token}`
          }
       });
 
@@ -140,6 +150,37 @@ describe('Register by Root', () => {
       const data2 = await response2.json();
       expect(data2).toHaveProperty('valid', true);
       destroy(app, db);
+   });
+
+   it('should bearer token valid', async () => {
+
+      const port = 7004;
+      const { app, db } = await init(port);
+
+      const data = await registerRoot(port);
+
+      const tockenData = await genToken(port);
+
+      expect(tockenData).toHaveProperty('access_token');
+      expect(tockenData).toHaveProperty('token_type', 'Refresh');
+      expect(tockenData).toHaveProperty('expires_in');
+
+      const token = tockenData.access_token;
+
+      const bearerToken = await getBearerToken(port, token);
+
+      expect(bearerToken).toHaveProperty('access_token');
+      expect(bearerToken).toHaveProperty('token_type', 'Bearer');
+      
+
+      const jwtToken = bearerToken.access_token;
+
+      // Проверяем токен JWT
+      const decoded = jwtService.verifyToken(jwtToken ) as any;
+
+      expect(decoded).toHaveProperty('userId');
+      expect(decoded).toHaveProperty('permissions');
+ 
    });
 
    it('should get user permissions', async () => {
@@ -156,7 +197,7 @@ describe('Register by Root', () => {
          method: 'GET',
          headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
+            Authorization: `${token}`
          }
       });
 

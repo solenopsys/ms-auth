@@ -1,14 +1,11 @@
 import { OAuth2Client } from "google-auth-library";
+import jwt, { type SignOptions, type VerifyOptions, type JwtPayload } from "jsonwebtoken";
 
 
-export interface GoogleAuth{
-	  verifyToken(token: string): Promise<any>;
-}
-
-export class GoogleAuthService implements GoogleAuth{
+export class GoogleAuthService {
 	private client: OAuth2Client;
 
-	constructor(private clientId: string) {
+	constructor(private clientId: string,		private readonly privateKey: string, ) {
 		this.client = new OAuth2Client(clientId);
 	}
 
@@ -22,5 +19,17 @@ export class GoogleAuthService implements GoogleAuth{
 		} catch (error) {
 			throw new Error("Invalid Google token");
 		}
+	}
+
+	async signToken(payload: JwtPayload): Promise<string> {
+		const signOptions: SignOptions = {
+			algorithm: "RS256",
+			keyid: "1",
+			issuer: this.clientId,
+			audience: this.clientId,
+			expiresIn: "1h",
+		};
+
+		return jwt.sign(payload, this.privateKey, signOptions);
 	}
 }

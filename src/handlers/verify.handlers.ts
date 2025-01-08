@@ -11,12 +11,12 @@ export class VerifyTokenHandler extends Handler {
 	async handle({ headers }: any) {
 
 		const authHeader = headers["authorization"];
-		if (!authHeader?.startsWith("Bearer ")) {
+		if (!authHeader ) {
 			throw new Error("Invalid token");
 		}
 
-		const token = authHeader.slice(7);
-		const tokenData = await this.db.validateAccessToken(token);
+		const token = authHeader;
+		const tokenData = await this.db.validateRefreshToken(token);
 
 		if (!tokenData) {
 			throw new Error("Invalid or expired token");

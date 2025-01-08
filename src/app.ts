@@ -1,8 +1,6 @@
 import { Elysia } from 'elysia';
 import { swagger } from '@elysiajs/swagger';
 import { cors } from '@elysiajs/cors';
-import { jwt } from '@elysiajs/jwt';
-//import { rateLimit } from 'elysia-rate-limit';
 import { Handler } from './types/handler';
 export class RestApp {
   app!: Elysia;
@@ -22,12 +20,10 @@ export class RestApp {
       }))
       // Rate limiting
       //.use(rateLimit())
-      // JWT настройки
-      .use(jwt({
-        name: 'jwt',
-        secret: process.env.JWT_SECRET!
-      }));
+  
   }
+
+ 
 
   initErrors() {
     this.app.onError(({ code, error, set }) => {

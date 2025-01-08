@@ -73,7 +73,7 @@ export const accessTokenRelations = relations(accessTokens, ({ one }) => ({
 // Types for the tables
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type AccessToken = typeof accessTokens.$inferSelect;
+export type RefreshToken = typeof accessTokens.$inferSelect;
 export type NewAccessToken = typeof accessTokens.$inferInsert;
 export type Permission = typeof permissions.$inferSelect;
 export type NewPermission = typeof permissions.$inferInsert;

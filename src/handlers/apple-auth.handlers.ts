@@ -8,8 +8,7 @@ export class AppleAuthHandler extends Handler {
 
 	constructor(
 		private appleAuth: AppleAuthService,
-		private db: DB,
-		private jwt: any,
+		private db: DB
 	) {
 		super();
 	}
@@ -22,23 +21,22 @@ export class AppleAuthHandler extends Handler {
 			throw new Error("Invalid token");
 		}
 
-		let user = await this.db.findUserByEmail(payload.email);
+		let user:any = await this.db.findUserByEmail(payload.email);
 		if (!user) {
 			const userId = await this.db.createUser(
 				payload.email,
 				null,
-				"apple",
-				payload.sub,
+				"apple"
 			);
-			user = { id: userId, email: payload.email };
+			 user = { id: userId, email: payload.email };
 		}
 
-		const token = await this.jwt.sign({
+		const token = await this.appleAuth.signToken({
 			userId: user.id,
 			email: user.email,
 		});
 
-		return {
+		return {  // todo 
 			access_token: token,
 			token_type: "Bearer",
 			expires_in: 7 * 24 * 60 * 60,

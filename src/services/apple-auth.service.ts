@@ -1,6 +1,8 @@
 import { createSign } from "crypto";
 import { JwksClient } from "jwks-rsa";
 
+import jwt, { type SignOptions, type VerifyOptions, type JwtPayload } from "jsonwebtoken";
+
 export class AppleAuthService {
 	private jwksClient: JwksClient;
 
@@ -8,8 +10,7 @@ export class AppleAuthService {
 		private readonly clientId: string,
 		private readonly teamId: string,
 		private readonly keyId: string,
-		private readonly privateKey: string,
-		private readonly jwt: any, // Инжектим jwt из Elysia
+		private readonly privateKey: string, 
 	) {
 		this.jwksClient = new JwksClient({
 			jwksUri: "https://appleid.apple.com/auth/keys",
@@ -33,25 +34,48 @@ export class AppleAuthService {
 			// Получаем публичный ключ Apple по kid
 			const key = await this.jwksClient.getSigningKey(header.kid);
 			const publicKey = key.getPublicKey();
+ 
 
-			// Верифицируем токен используя jwt из Elysia
-			const payload = await this.jwt.verify(token, {
-				key: publicKey,
+			const verifyOptions: VerifyOptions = {
 				algorithms: ["RS256"],
-			});
+			};
 
-			// Проверяем дополнительные claims
-			if (
-				payload.iss !== "https://appleid.apple.com" ||
-				payload.aud !== this.clientId
-			) {
-				throw new Error("Invalid token claims");
-			}
+			const decoded = jwt.verify(token, publicKey, verifyOptions);
+         
+ 
 
-			return payload;
+			  // Убедимся, что декодированный токен является объектом
+			  if (typeof decoded !== "object" || decoded === null) {
+				 throw new Error("Decoded token is not an object");
+			  }
+	  
+			  const payload = decoded as JwtPayload;
+	  
+			  // Проверяем дополнительные claims
+			  if (
+				 payload.iss !== "https://appleid.apple.com" ||
+				 payload.aud !== this.clientId
+			  ) {
+				 throw new Error("Invalid token claims");
+			  }
+	  
+			  return payload;
+			 
 		} catch (error) {
 			throw new Error("Invalid Apple ID token");
 		}
+	}
+
+	async signToken(payload: JwtPayload): Promise<string> {
+		const signOptions: SignOptions = {
+			algorithm: "RS256",
+			keyid: "1",
+			issuer: this.teamId,
+			audience: this.clientId,
+			expiresIn: "1h",
+		};
+
+		return jwt.sign(payload, this.privateKey, signOptions);
 	}
 
 	// Остальные методы без изменений

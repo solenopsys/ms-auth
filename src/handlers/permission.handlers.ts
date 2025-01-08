@@ -16,18 +16,18 @@ export class PermissionHandler extends Handler {
        try {
            // Проверяем наличие заголовка Authorization
            const authHeader = headers.authorization;
-           if (!authHeader || !authHeader.startsWith('Bearer ')) {
+           if (!authHeader ) {
                throw new Error('Missing or invalid authorization header');
            }
 
            // Получаем токен
-           const token = authHeader.split(' ')[1];
+           const token = authHeader;
            if (!token) {
                throw new Error('Invalid token format');
            }
 
            // Проверяем валидность токена и получаем информацию о нём
-           const accessToken = await this.db.validateAccessToken(token);
+           const accessToken = await this.db.validateRefreshToken(token);
            if (!accessToken) {
                throw new Error('Invalid or expired token');
            }

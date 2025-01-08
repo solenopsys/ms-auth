@@ -4,7 +4,7 @@ import { Database } from 'bun:sqlite';
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import {
 	type User,
-	type AccessToken,
+	type RefreshToken,
 	type Permission,
 	type UserPermission
 } from './schema';
@@ -57,7 +57,7 @@ export class DB {
 		return result[0];
 	}
 
-	async createAccessToken(
+	async createRefreshToken(
 		userId: number,
 		token: string,
 		expiresAt: Date
@@ -71,7 +71,7 @@ export class DB {
 		return result[0].id;
 	}
 
-	async validateAccessToken(token: string): Promise<AccessToken | undefined> {
+	async validateRefreshToken(token: string): Promise<RefreshToken | undefined> {
 		const result = await this.db.select()
 			.from(accessTokens)
 			.where(sql`${accessTokens.token} = ${token} AND datetime(${accessTokens.expiresAt}) > datetime('now')`)
